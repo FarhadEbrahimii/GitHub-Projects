@@ -1,0 +1,44 @@
+services:
+  # 1. Prometheus (متریک‌ها)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: lab-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 2. Tempo (تریس‌ها)
+  tempo:
+    image: grafana/tempo:latest
+    container_name: lab-tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    volumes:
+      - ./tempo.yaml:/etc/tempo.yaml
+    ports:
+      - "9411:9411" # Zipkin receiver (پورت استاندارد که اسپرینگ با آن حرف می‌زند)
+      - "3200:3200" # Tempo HTTP
+
+  # 3. Loki (لاگ‌ها)
+  loki:
+    image: grafana/loki:latest
+    container_name: lab-loki
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    ports:
+      - "3100:3100"
+
+  # 4. Grafana (داشبورد متمرکز)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: lab-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
